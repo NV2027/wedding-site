@@ -5,7 +5,7 @@ export default function Travel() {
         Location + Hotel Details
       </h1>
 
-      {/* PRIMARY VENUE */}
+      {/* VENUE */}
       <section className="space-y-3">
         <h2 className="font-serif text-2xl">Venue</h2>
         <p className="text-gray-700">
@@ -13,8 +13,8 @@ export default function Travel() {
           Carlsbad, California.
         </p>
         <p className="text-gray-600">
-          Because multiple celebrations will occur throughout the weekend,
-          staying on property will provide the most convenience.
+          With several celebrations happening across the weekend, staying at
+          the venue will be the most convenient option.
         </p>
       </section>
 
@@ -22,9 +22,8 @@ export default function Travel() {
       <section className="space-y-3">
         <h2 className="font-serif text-2xl">Room Block</h2>
         <p className="text-gray-700">
-          A discounted room block is available for our guests at the Park
-          Hyatt Aviara. We encourage booking early, as availability may be
-          limited.
+          A discounted room block is available for our guests. We recommend
+          reserving early, as rooms may fill quickly.
         </p>
 
         <a
@@ -36,13 +35,13 @@ export default function Travel() {
         </a>
       </section>
 
-      {/* STAYING ELSEWHERE */}
+      {/* TRANSPORTATION */}
       <section className="space-y-3">
-        <h2 className="font-serif text-2xl">If You Stay Elsewhere</h2>
+        <h2 className="font-serif text-2xl">Transportation</h2>
         <p className="text-gray-700">
-          Guests who choose accommodations outside the Park Hyatt Aviara will
-          be responsible for arranging their own transportation to and from
-          the venue.
+          Transportation will not be provided. Guests staying outside the
+          Park Hyatt Aviara should plan to arrange their own travel to and
+          from the venue.
         </p>
       </section>
 
@@ -51,16 +50,16 @@ export default function Travel() {
         <h2 className="font-serif text-2xl">Airport</h2>
         <p className="text-gray-700">
           The nearest airport is San Diego International Airport (SAN),
-          approximately 35–40 minutes from the resort depending on traffic.
+          approximately 35–40 minutes away depending on traffic.
         </p>
       </section>
 
-      {/* FUTURE HOTELS */}
+      {/* ADDITIONAL HOTELS */}
       <section className="space-y-3">
         <h2 className="font-serif text-2xl">Additional Hotel Options</h2>
         <p className="text-gray-500">
-          We will share recommendations for nearby hotels soon for guests who
-          prefer alternative accommodations.
+          We will share nearby hotel recommendations soon for guests who prefer
+          alternative accommodations.
         </p>
       </section>
     </div>
