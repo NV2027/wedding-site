@@ -1,107 +1,72 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white to-rose-50 px-6 py-16 text-center">
-      <div id="top" />
+    <div className="grid gap-10">
+      <section className="rounded-3xl border border-black/5 bg-gradient-to-b from-white to-rose-50 p-10 md:p-14 text-center">
+        <h1 className="font-serif text-5xl md:text-6xl tracking-tight">Nisha & Vickram</h1>
+        <p className="mt-4 text-lg md:text-xl text-gray-600">We’re getting married</p>
 
-      {/* HERO */}
-      <div className="max-w-3xl mx-auto flex flex-col items-center justify-center gap-6">
-        <h1 className="font-serif text-5xl md:text-6xl tracking-tight text-gray-900">
-          Nisha & Vickram
-        </h1>
-
-        <p className="text-lg md:text-xl text-gray-600">
-          We’re getting married
-        </p>
-
-        <div className="mt-6 text-sm uppercase tracking-[0.25em] text-gray-500">
+        <div className="mt-6 text-xs uppercase tracking-[0.3em] text-gray-500">
           Park Hyatt Aviara · Carlsbad · August 23, 2026
         </div>
-      </div>
 
-      {/* DETAILS */}
-      <section id="details" className="mt-24 max-w-3xl mx-auto text-left">
-        <h2 className="font-serif text-3xl tracking-tight text-gray-900 mb-6">
-          Wedding Details
-        </h2>
-
-        <p className="text-gray-600 leading-relaxed mb-6">
-          We are so excited to celebrate our wedding with you. More details
-          about the venue, dress code, and weekend events will be shared here.
-        </p>
-
-        <div className="space-y-2 text-gray-700">
-          <p>
-            <span className="font-medium">Venue:</span> Park Hyatt Aviara
-          </p>
-          <p>
-            <span className="font-medium">City:</span> Carlsbad, California
-          </p>
-          <p>
-            <span className="font-medium">Date:</span> August 23, 2026
-          </p>
-          <p>
-            <span className="font-medium">Dress Code:</span> Formal
-          </p>
+        <div className="mt-10 flex flex-col md:flex-row gap-3 justify-center">
+          <Link className="rounded-2xl bg-black text-white px-6 py-3 text-sm tracking-wide" href="/rsvp">
+            RSVP
+          </Link>
+          <Link className="rounded-2xl border border-black/10 px-6 py-3 text-sm tracking-wide hover:bg-black hover:text-white transition" href="/travel">
+            Location + Hotel Details
+          </Link>
+          <Link className="rounded-2xl border border-black/10 px-6 py-3 text-sm tracking-wide hover:bg-black hover:text-white transition" href="/story">
+            Our Story
+          </Link>
+          <Link className="rounded-2xl border border-black/10 px-6 py-3 text-sm tracking-wide hover:bg-black hover:text-white transition" href="/registry">
+            Registry
+          </Link>
         </div>
       </section>
 
-      {/* SCHEDULE */}
-      <section id="schedule" className="mt-20 max-w-3xl mx-auto text-left">
-        <h2 className="font-serif text-3xl tracking-tight text-gray-900 mb-6">
-          Schedule
-        </h2>
+      <section className="grid md:grid-cols-2 gap-6">
+        <Card title="Quick Details">
+          <ul className="space-y-2 text-gray-700">
+            <li><span className="font-medium">Venue:</span> Park Hyatt Aviara</li>
+            <li><span className="font-medium">City:</span> Carlsbad, California</li>
+            <li><span className="font-medium">Date:</span> August 23, 2026</li>
+            <li><span className="font-medium">Dress Code:</span> Formal</li>
+          </ul>
+        </Card>
 
-        <div className="space-y-4">
-          <ScheduleItem
-            time="4:30 PM"
-            title="Ceremony"
-            desc="Arrive a little early to get settled."
-          />
-          <ScheduleItem
-            time="5:15 PM"
-            title="Cocktail Hour"
-            desc="Drinks, light bites, and photos."
-          />
-          <ScheduleItem
-            time="6:30 PM"
-            title="Reception"
-            desc="Dinner, toasts, and dancing."
-          />
-          <ScheduleItem
-            time="10:30 PM"
-            title="Send-off"
-            desc="A sweet ending to a perfect day."
-          />
-        </div>
-
-        <p className="mt-8 text-sm text-gray-500">
-          Timing is approximate — we’ll update as we get closer.
-        </p>
+        <Card title="Navigation">
+          <p className="text-gray-600 mb-4">Use the links above to find what you need quickly.</p>
+          <div className="flex flex-wrap gap-2">
+            <Pill href="/travel">Travel</Pill>
+            <Pill href="/rsvp">RSVP</Pill>
+            <Pill href="/story">Our Story</Pill>
+            <Pill href="/registry">Registry</Pill>
+          </div>
+        </Card>
       </section>
-
-      <div className="h-24" />
-    </main>
+    </div>
   );
 }
 
-function ScheduleItem({
-  time,
-  title,
-  desc,
-}: {
-  time: string;
-  title: string;
-  desc: string;
-}) {
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl bg-white/70 backdrop-blur border border-black/5 p-5">
-      <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
-        <div className="text-sm uppercase tracking-[0.25em] text-gray-500">
-          {time}
-        </div>
-        <div className="font-serif text-2xl text-gray-900">{title}</div>
-      </div>
-      <p className="mt-2 text-gray-600">{desc}</p>
+    <div className="rounded-3xl border border-black/5 bg-white p-7">
+      <h2 className="font-serif text-2xl tracking-tight mb-4">{title}</h2>
+      {children}
     </div>
+  );
+}
+
+function Pill({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="rounded-full border border-black/10 px-4 py-2 text-sm text-gray-700 hover:bg-black hover:text-white transition"
+    >
+      {children}
+    </Link>
   );
 }
