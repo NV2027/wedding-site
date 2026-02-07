@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="hidden md:flex items-center gap-6 text-sm tracking-wide text-gray-700">
               <Link className="hover:text-gray-900" href="/travel">Location + Hotel Details</Link>
               <Link className="hover:text-gray-900" href="/rsvp">RSVP</Link>
-              <Link className="hover:text-gray-900" href="/story">Our Story</Link>
+             <Link className="hover:text-gray-900" href="/events">Events</Link>
               <Link className="hover:text-gray-900" href="/registry">Registry</Link>
             </div>
 
