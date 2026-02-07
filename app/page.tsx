@@ -28,14 +28,25 @@ export default function Home() {
       </section>
 
       <section className="grid md:grid-cols-2 gap-6">
-        <Card title="Quick Details">
-          <ul className="space-y-2 text-gray-700">
-            <li><span className="font-medium">Venue:</span> Park Hyatt Aviara</li>
-            <li><span className="font-medium">City:</span> Carlsbad, California</li>
-            <li><span className="font-medium">Date:</span> August 23, 2026</li>
-            <li><span className="font-medium">Dress Code:</span> Formal</li>
-          </ul>
-        </Card>
+      <Card title="Quick Details">
+  <ul className="space-y-2 text-gray-700">
+    <li><span className="font-medium">Venue:</span> Park Hyatt Aviara</li>
+    <li><span className="font-medium">City:</span> Carlsbad, California</li>
+    <li>
+      <span className="font-medium">Date:</span> December 31, 2026 – January 3, 2027
+    </li>
+    <li>
+      <span className="font-medium">Room Link:</span>{" "}
+      <a
+        className="underline"
+        target="_blank"
+        href="https://www.hyatt.com/events/en-US/group-booking/SANPA/G-NBVK"
+      >
+        Book Here
+      </a>
+    </li>
+  </ul>
+</Card>
 
         <Card title="Navigation">
           <p className="text-gray-600 mb-4">Use the links above to find what you need quickly.</p>
