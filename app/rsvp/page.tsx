@@ -1,30 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type EventKey = "sangeet" | "anand_karaj" | "reception";
 
 type Invite = {
   inviteId: string;
-  exactName: string; // what the guest must type (we’ll normalize case/spaces)
-  maxPartySize: number; // total seats including the primary guest
+  exactName: string;
+  maxPartySize: number;
   allowedEvents: EventKey[];
 };
-
-const INVITES: Invite[] = [
-  {
-    inviteId: "INV001",
-    exactName: "Jon Smith",
-    maxPartySize: 2,
-    allowedEvents: ["anand_karaj", "reception"],
-  },
-  {
-    inviteId: "INV002",
-    exactName: "Jason Patel",
-    maxPartySize: 4,
-    allowedEvents: ["sangeet", "anand_karaj", "reception"],
-  },
-];
 
 const EVENT_LABELS: Record<EventKey, string> = {
   sangeet: "Sangeet",
@@ -43,6 +28,9 @@ type EventResponse = {
 
 export default function RSVPPage() {
   const [step, setStep] = useState<"lock" | "form" | "done">("lock");
+  const [loadingInvites, setLoadingInvites] = useState(true);
+  const [invites, setInvites] = useState<Invite[]>([]);
+
   const [nameInput, setNameInput] = useState("");
   const [invite, setInvite] = useState<Invite | null>(null);
 
@@ -51,21 +39,28 @@ export default function RSVPPage() {
   >({});
   const [guestNames, setGuestNames] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/rsvp", { cache: "no-store" });
+        const data = await res.json();
+        setInvites(data.invites ?? []);
+      } catch (e) {
+        console.error(e);
+        alert("Unable to load invitations. Please try again later.");
+      } finally {
+        setLoadingInvites(false);
+      }
+    })();
+  }, []);
 
   const maxGuestsMinusOne = useMemo(() => {
     return invite ? Math.max(invite.maxPartySize - 1, 0) : 0;
   }, [invite]);
 
-  function handleLookup(e: React.FormEvent) {
-    e.preventDefault();
-    const normalized = normalizeName(nameInput);
-    const found = INVITES.find((i) => normalizeName(i.exactName) === normalized);
-    if (!found) {
-      setInvite(null);
-      setStep("lock");
-      alert("Name not found. Please check spelling and try again.");
-      return;
-    }
+  function initForInvite(found: Invite) {
     setInvite(found);
 
     // Initialize event responses for allowed events
@@ -75,10 +70,26 @@ export default function RSVPPage() {
     });
     setEventResponses(initial);
 
-    // Initialize guest names slots (maxPartySize - 1)
+    // Initialize guest name slots (maxPartySize - 1)
     setGuestNames(Array(Math.max(found.maxPartySize - 1, 0)).fill(""));
 
+    setNotes("");
     setStep("form");
+  }
+
+  function handleLookup(e: React.FormEvent) {
+    e.preventDefault();
+    const normalized = normalizeName(nameInput);
+    const found = invites.find((i) => normalizeName(i.exactName) === normalized);
+
+    if (!found) {
+      alert(
+        "Name not found. Please check spelling and try again (must match your invitation)."
+      );
+      return;
+    }
+
+    initForInvite(found);
   }
 
   function updateEvent(key: EventKey, patch: Partial<EventResponse>) {
@@ -86,7 +97,7 @@ export default function RSVPPage() {
       const current = prev[key] ?? { attending: false, partySize: 1 };
       const next = { ...current, ...patch };
 
-      // If toggling off, reset party size to 1 (clean)
+      // If toggling off, reset party size to 1
       if (!next.attending) next.partySize = 1;
 
       // Bound party size
@@ -97,45 +108,85 @@ export default function RSVPPage() {
     });
   }
 
-  function requiredGuestCountForAnyEvent() {
-    if (!invite) return 0;
-    // Max party size selected across events (because the same invite applies)
-    const sizes = Object.values(eventResponses).map((r) => (r?.attending ? r.partySize : 1));
-    const maxSelected = sizes.length ? Math.max(...sizes) : 1;
-    return Math.max(maxSelected - 1, 0);
+  function selectedMaxPartySize() {
+    if (!invite) return 1;
+    const sizes = Object.values(eventResponses).map((r) =>
+      r?.attending ? r.partySize : 1
+    );
+    return sizes.length ? Math.max(...sizes) : 1;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  function neededGuestCount() {
+    return Math.max(selectedMaxPartySize() - 1, 0);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!invite) return;
 
     const anyYes = invite.allowedEvents.some((k) => eventResponses[k]?.attending);
-    if (!anyYes) {
-      alert("Please select attending Yes/No for at least one event (or choose No for all).");
-      // technically “No for all” is allowed — but we want explicit action:
-      // We'll treat "No for all" as allowed if user confirmed. For now, keep simple:
-      // If they submit with all No, we allow it.
-    }
+    // Allow "no to everything", but require an explicit decision:
+    // If they left everything unchecked, treat as "no to all" is fine.
+    // (Checkbox is "Attending", unchecked = not attending)
+    // So anyYes can be false and that's acceptable.
 
-    const neededGuestFields = requiredGuestCountForAnyEvent();
-    const entered = guestNames.slice(0, neededGuestFields).map((s) => s.trim());
-    const missing = entered.some((s) => s.length === 0);
-    if (neededGuestFields > 0 && missing) {
+    const needGuests = neededGuestCount();
+    const enteredGuests = guestNames.slice(0, needGuests).map((s) => s.trim());
+    const missing = enteredGuests.some((s) => s.length === 0);
+    if (needGuests > 0 && missing) {
       alert("Please enter the name(s) of your guest(s).");
       return;
     }
 
-    // For now, we just show a success screen.
-    // Next step: POST this payload to an API route that writes to Google Sheets.
-    console.log("RSVP payload", {
-      inviteId: invite.inviteId,
-      exactName: invite.exactName,
-      responses: eventResponses,
-      guestNames: entered,
-      notes,
-    });
+    // Prepare values for sheet columns (Yes/No/Blank)
+    const sangeet = invite.allowedEvents.includes("sangeet")
+      ? eventResponses.sangeet?.attending
+        ? "Yes"
+        : "No"
+      : "";
+    const anand = invite.allowedEvents.includes("anand_karaj")
+      ? eventResponses.anand_karaj?.attending
+        ? "Yes"
+        : "No"
+      : "";
+    const reception = invite.allowedEvents.includes("reception")
+      ? eventResponses.reception?.attending
+        ? "Yes"
+        : "No"
+      : "";
 
-    setStep("done");
+    // Party size = max selected across events they said yes to (or 1 if all No)
+    const partySize = anyYes ? selectedMaxPartySize() : 1;
+
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/rsvp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inviteId: invite.inviteId,
+          exactName: invite.exactName,
+          sangeet,
+          anand_karaj: anand,
+          reception,
+          party_size: partySize,
+          guest_names: enteredGuests.join(", "),
+          notes: notes.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || "Submission failed");
+      }
+
+      setStep("done");
+    } catch (err) {
+      console.error(err);
+      alert("Sorry — we couldn’t submit your RSVP. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (step === "done" && invite) {
@@ -143,7 +194,8 @@ export default function RSVPPage() {
       <div className="max-w-2xl">
         <h1 className="font-serif text-4xl tracking-tight">Thank You</h1>
         <p className="mt-4 text-gray-600">
-          We’ve received your RSVP for <span className="font-medium">{invite.exactName}</span>.
+          We’ve received your RSVP for{" "}
+          <span className="font-medium">{invite.exactName}</span>.
         </p>
         <p className="mt-2 text-gray-600">
           If you need to make a change later, you can return and submit again.
@@ -167,13 +219,15 @@ export default function RSVPPage() {
             placeholder="Full name (e.g., Jon Smith)"
             className="w-full rounded-xl border border-black/10 px-4 py-3"
             required
+            disabled={loadingInvites}
           />
 
           <button
             type="submit"
-            className="rounded-xl bg-black text-white px-6 py-3 text-sm tracking-wide"
+            className="rounded-xl bg-black text-white px-6 py-3 text-sm tracking-wide disabled:opacity-60"
+            disabled={loadingInvites}
           >
-            Continue
+            {loadingInvites ? "Loading..." : "Continue"}
           </button>
         </form>
 
@@ -184,10 +238,9 @@ export default function RSVPPage() {
     );
   }
 
-  // step === "form"
   if (!invite) return null;
 
-  const neededGuestFields = requiredGuestCountForAnyEvent();
+  const needGuests = neededGuestCount();
 
   return (
     <div className="max-w-2xl">
@@ -196,7 +249,8 @@ export default function RSVPPage() {
         Welcome, <span className="font-medium">{invite.exactName}</span>.
       </p>
       <p className="mt-1 text-gray-600">
-        Your invitation allows up to <span className="font-medium">{invite.maxPartySize}</span>{" "}
+        Your invitation allows up to{" "}
+        <span className="font-medium">{invite.maxPartySize}</span>{" "}
         {invite.maxPartySize === 1 ? "person" : "people"} total.
       </p>
 
@@ -230,9 +284,7 @@ export default function RSVPPage() {
                     <select
                       className="rounded-xl border border-black/10 px-3 py-2 text-sm"
                       value={resp.partySize}
-                      onChange={(e) =>
-                        updateEvent(key, { partySize: Number(e.target.value) })
-                      }
+                      onChange={(e) => updateEvent(key, { partySize: Number(e.target.value) })}
                     >
                       {Array.from({ length: invite.maxPartySize }, (_, i) => i + 1).map((n) => (
                         <option key={n} value={n}>
@@ -250,6 +302,7 @@ export default function RSVPPage() {
 
         <section className="space-y-3">
           <h2 className="font-serif text-2xl">Guest Names</h2>
+
           {maxGuestsMinusOne === 0 ? (
             <p className="text-gray-600">No additional guests are included in this invitation.</p>
           ) : (
@@ -259,7 +312,7 @@ export default function RSVPPage() {
               </p>
 
               {Array.from({ length: maxGuestsMinusOne }, (_, idx) => {
-                const disabled = idx >= neededGuestFields; // only require/show as enabled what they selected
+                const enabled = idx < needGuests;
                 return (
                   <input
                     key={idx}
@@ -271,17 +324,17 @@ export default function RSVPPage() {
                     }}
                     placeholder={idx === 0 ? "Guest 1 name" : `Guest ${idx + 1} name`}
                     className={`w-full rounded-xl border border-black/10 px-4 py-3 ${
-                      disabled ? "opacity-50" : ""
+                      enabled ? "" : "opacity-50"
                     }`}
-                    disabled={disabled}
+                    disabled={!enabled}
                   />
                 );
               })}
 
               <p className="text-sm text-gray-500">
                 You currently selected up to{" "}
-                <span className="font-medium">{neededGuestFields}</span>{" "}
-                {neededGuestFields === 1 ? "guest" : "guests"}.
+                <span className="font-medium">{needGuests}</span>{" "}
+                {needGuests === 1 ? "guest" : "guests"}.
               </p>
             </div>
           )}
@@ -300,14 +353,11 @@ export default function RSVPPage() {
 
         <button
           type="submit"
-          className="rounded-xl bg-black text-white px-6 py-3 text-sm tracking-wide"
+          className="rounded-xl bg-black text-white px-6 py-3 text-sm tracking-wide disabled:opacity-60"
+          disabled={submitting}
         >
-          Submit RSVP
+          {submitting ? "Submitting..." : "Submit RSVP"}
         </button>
-
-        <p className="text-sm text-gray-500">
-          For now, this form saves locally only. Next step: connect submissions to Google Sheets.
-        </p>
       </form>
     </div>
   );
